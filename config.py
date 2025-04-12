@@ -1,0 +1,6 @@
+import os
+
+# config.py
+
+BOT_TOKEN = "7797871824:AAFqK1rQyYHAMiO41wSXOlOU7go-nAcTniE"
+ADMIN_ID = 525180259
