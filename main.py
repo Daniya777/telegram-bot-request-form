@@ -105,19 +105,18 @@ async def handle_question(message: Message, state: FSMContext):
             admin_msg_id = get_admin_message_id(request_id)
             deleted = delete_request_by_id(request_id)
             if deleted:
-                    if admin_msg_id:
-                        try:
-                            await bot.delete_message(chat_id=ADMIN_ID, message_id=admin_msg_id)
-                        except Exception:
-                            await bot.send_message(ADMIN_ID, f"⚠️ Не удалось удалить сообщение по заявке #{request_id}.")
-                    await bot.send_message(ADMIN_ID, f"❌ Клиент отменил заявку #{request_id}.")
-                    await message.answer(f"✅ Заявка #{request_id} отменена.", reply_markup=get_final_keyboard())
+                if admin_msg_id:
+                    try:
+                        await bot.delete_message(chat_id=ADMIN_ID, message_id=admin_msg_id)
+                    except Exception:
+                        pass
+                await bot.send_message(ADMIN_ID, f"❌ Клиент отменил заявку #{request_id}.")
+                await message.answer(f"✅ Заявка #{request_id} отменена.", reply_markup=get_final_keyboard())
             else:
-                    await message.answer(
-                        f"❌ Заявка с ID {request_id} не найдена или уже была удалена.\nПроверьте правильность номера.",
-                        reply_markup=get_final_keyboard()
-                    )
-
+                await message.answer(
+                    f"❌ Заявка с ID {request_id} не найдена или уже была удалена.\nПроверьте правильность номера.",
+                    reply_markup=get_final_keyboard()
+                )
         except ValueError:
             await message.answer("Введите корректный ID (числом).", reply_markup=get_final_keyboard())
         await state.clear()
@@ -136,11 +135,18 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer(questions[idx + 1][1], reply_markup=get_nav_keyboard())
     else:
         data = await state.get_data()
-        admin_message = await bot.send_message(
-            ADMIN_ID,
+
+        user = message.from_user
+        user_info = f"👤 Отправитель: {user.full_name}"
+        if user.username:
+            user_info += f" (@{user.username})"
+        user_info += f"\n🆔 ID: {user.id}"
+
+        text = (
             f"📩 Новая заявка на бота:\n\n"
-            f"👤 Имя: {data['name']}\n"
-            f"📞 Контакт: {data['contact']}\n"
+            f"{user_info}\n\n"
+            f"Имя: {data['name']}\n"
+            f"Контакт: {data['contact']}\n"
             f"🤖 Название: {data['bot_name']}\n"
             f"🎯 Цель: {data['purpose']}\n"
             f"⚙️ Функции: {data['functions']}\n"
@@ -153,6 +159,8 @@ async def handle_question(message: Message, state: FSMContext):
             f"⏱ Срочность: {data['urgency']}\n"
             f"📝 Другое: {data['other']}"
         )
+
+        admin_message = await bot.send_message(ADMIN_ID, text)
         request_id = add_full_request(**data, admin_message_id=admin_message.message_id)
 
         await message.answer(
@@ -167,3 +175,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
